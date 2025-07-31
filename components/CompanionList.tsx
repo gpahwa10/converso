@@ -21,6 +21,14 @@ const CompanionList = ({
   companions,
   classNames,
 }: CompansionsListProps) => {
+  // 👇 Deduplicate based on ID
+  const seen = new Set();
+  const uniqueCompanions = companions?.filter((c) => {
+    if (seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  });
+
   return (
     <article className={cn("companion-list", classNames)}>
       <h2 className="font-bold text-3xl">{title}</h2>
@@ -33,7 +41,7 @@ const CompanionList = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {companions?.map(({ id, subject, name, topic, duration }) => (
+          {uniqueCompanions?.map(({ id, subject, name, topic, duration }) => (
             <TableRow key={id}>
               <TableCell>
                 <Link href={`/companions/${id}`}>
@@ -47,7 +55,7 @@ const CompanionList = ({
                         alt="Subject"
                         width={35}
                         height={35}
-                      ></Image>
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <p className="text-2xl font-bold">{name}</p>
@@ -64,14 +72,25 @@ const CompanionList = ({
                   className="flex items-center justify-center rounded-lg p-2 w-fit md:hidden"
                   style={{ backgroundColor: getSubjectColor(subject) }}
                 >
-                <Image src={`/icons/${subject}.svg`} alt="Subject Image" height={18 } width={18}></Image>
+                  <Image
+                    src={`/icons/${subject}.svg`}
+                    alt="Subject Image"
+                    height={18}
+                    width={18}
+                  />
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 w-full justify-end">
-                  <p className="text-2xl">{duration} {' '}</p>
+                  <p className="text-2xl">{duration} </p>
                   <span className="max-md:hidden">Mins</span>
-                  <Image src='/icons/clock.svg' alt="minutes" width={14} height={14} className="md:hidden"></Image>
+                  <Image
+                    src="/icons/clock.svg"
+                    alt="minutes"
+                    width={14}
+                    height={14}
+                    className="md:hidden"
+                  />
                 </div>
               </TableCell>
             </TableRow>
