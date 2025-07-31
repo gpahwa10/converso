@@ -1,4 +1,4 @@
-'use server';
+"use server";
 import { auth } from "@clerk/nextjs/server";
 import { createSupabaseClient } from "../supabase";
 
@@ -32,18 +32,70 @@ export const getAllCompanions = async ({
       .or(`topic.ilike.%${topic}%, name.ilike.%${topic}%`);
   } else if (subject) {
     query = query.ilike("subject", `%${subject}%`);
-  }else if (topic) {
+  } else if (topic) {
     query = query.ilike("topic", `%${topic}%,name.ilike.%${topic}%`);
-  }  
+  }
 
-  query = query.range((page-1)* limit,page*limit-1);
-  
-  try{const {data:companions,error} = await query;
+  query = query.range((page - 1) * limit, page * limit - 1);
 
-  if(error) throw new Error(error.message);
-  return companions;
-}catch(err){
-   console.error("Supabase fetch error:", err);
-  throw new Error("Failed to fetch companions");
-}
+  try {
+    const { data: companions, error } = await query;
+
+    if (error) throw new Error(error.message);
+    return companions;
+  } catch (err) {
+    console.error("Supabase fetch error:", err);
+    throw new Error("Failed to fetch companions");
+  }
+};
+
+export const getCompanion = async (id: string) => {
+  const supabase = createSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("companions")
+    .select()
+    .eq("id", id);
+
+  if (error) return console.log(error);
+
+  return data[0];
+};
+
+export const addToSessionHistory = async (companionId: string) => {
+  const { userId } = await auth();
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase.from("session_history").insert({
+    companion_id: companionId,
+    user_id: userId,
+  });
+
+  console.log(`${userId}`);
+  // console.log(`${data}`);
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const getSessionHistory = async (limit = 10) => {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("session_history")
+    .select("companions:companion_id(*)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data.map(({ companions }) => companions);
+};
+
+export const getUserSessionHistory = async (userId: string, limit = 10) => {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("session_history")
+    .select(`companions:companion_id(*)`)
+    .eq(`user_id`, userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data.map(({ companions }) => companions);
 };
